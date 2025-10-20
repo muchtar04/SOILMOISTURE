@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌱 Soil Moisture_ESP32 Web IoT Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #a8e6cf, #dcedc1);
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h2 {
+      color: #2c3e50;
+    }
+
+    input {
+      padding: 10px;
+      margin: 8px;
+      width: 220px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 25px;
+      border: none;
+      border-radius: 8px;
+      font-size: 17px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    #loginBtn { background: #3498db; color: white; }
+    #loginBtn:hover { background: #2980b9; }
+
+    #logoutBtn { background: #95a5a6; color: white; margin-top: 25px; }
+    #logoutBtn:hover { background: #7f8c8d; }
+
+    .gauge-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .gauge-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      width: 200px;
+      transition: transform 0.2s;
+    }
+
+    .gauge-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .average-card {
+      width: 240px;
+      margin-top: 30px;
+    }
+
+    #dashboard {
+      display: none;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>🌱 Soil Moisture_ESP32 Web IoT Dashboard</h2>
+
+  <!-- ==================== LOGIN ==================== -->
+  <div id="login">
+    <h3>Login ke Firebase</h3>
+    <input type="email" id="email" placeholder="Masukkan Email"><br>
+    <input type="password" id="password" placeholder="Masukkan Password"><br>
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="dashboard">
+    <div class="gauge-container">
+      <div class="gauge-card"><canvas id="soil1"></canvas><h3>Soil 1</h3></div>
+      <div class="gauge-card"><canvas id="soil2"></canvas><h3>Soil 2</h3></div>
+      <div class="gauge-card"><canvas id="soil3"></canvas><h3>Soil 3</h3></div>
+      <div class="gauge-card"><canvas id="soil4"></canvas><h3>Soil 4</h3></div>
+    </div>
+
+    <div style="display:flex; justify-content:center;">
+      <div class="gauge-card average-card">
+        <canvas id="average"></canvas>
+        <h3>Rata-rata Soil</h3>
+      </div>
+    </div>
+
+    <button id="logoutBtn">Logout</button>
+    <div class="footer"> MUCHTAR_WEB IoT</div>
+  </div>
+
+  <!-- ==================== FIREBASE SCRIPT ==================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+    // 🔧 Konfigurasi Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyD7uqOB4-2rInIjnZurkn5OJhfAR7H0wEI",
+      authDomain: "relay-761db.firebaseapp.com",
+      databaseURL: "https://relay-761db-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "relay-761db",
+      storageBucket: "relay-761db.firebasestorage.app",
+      messagingSenderId: "213196876061",
+      appId: "1:213196876061:web:e07d90d76a00d00b8799f4"
+    };
+
+    // 🔥 Inisialisasi Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Elemen DOM
+    const loginDiv = document.getElementById("login");
+    const dashboardDiv = document.getElementById("dashboard");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // ==================== LOGIN ====================
+    loginBtn.addEventListener("click", () => {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => alert("✅ Login berhasil!"))
+        .catch(error => alert("❌ Login gagal: " + error.message));
+    });
+
+    logoutBtn.addEventListener("click", () => signOut(auth));
+
+    // ==================== AUTH STATE ====================
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loginDiv.style.display = "none";
+        dashboardDiv.style.display = "block";
+        loadDashboard();
+      } else {
+        loginDiv.style.display = "block";
+        dashboardDiv.style.display = "none";
+      }
+    });
+
+    // ==================== GAUGE CHART.JS ====================
+    const colors = {
+      green: '#4caf50',
+      yellow: '#ffb300',
+      red: '#f44336',
+      gray: '#e5e5e5'
+    };
+
+    function createGauge(ctx, value, fullCircle = false) {
+      return new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [value, 100 - value],
+            backgroundColor: [colors.green, colors.gray],
+            borderWidth: 0,
+            borderRadius: 15,
+            rotation: fullCircle ? 0 : 225,
+            circumference: fullCircle ? 360 : 270
+          }]
+        },
+        options: {
+          cutout: '75%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
+          },
+          animation: { duration: 0 },
+        },
+        plugins: [{
+          id: 'textCenter',
+          afterDraw(chart) {
+            const { ctx, chartArea: { width, height } } = chart;
+            const value = chart.data.datasets[0].data[0];
+            ctx.save();
+            ctx.font = 'bold 18px Poppins';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#333';
+            ctx.fillText(value + '%', width / 2, height / 2);
+          }
+        }]
+      });
+    }
+
+    // Inisialisasi 5 gauge
+    const soilCharts = {
+      soil1: createGauge(document.getElementById('soil1'), 0),
+      soil2: createGauge(document.getElementById('soil2'), 0),
+      soil3: createGauge(document.getElementById('soil3'), 0),
+      soil4: createGauge(document.getElementById('soil4'), 0),
+      average: createGauge(document.getElementById('average'), 0, true)
+    };
+
+    function updateGauge(chart, value) {
+      let color = colors.green;
+      if (value < 40) color = colors.red;
+      else if (value < 70) color = colors.yellow;
+
+      chart.data.datasets[0].data = [value, 100 - value];
+      chart.data.datasets[0].backgroundColor[0] = color;
+      chart.update();
+    }
+
+    // ==================== FIREBASE DATA REALTIME ====================
+    function loadDashboard() {
+      const sensorRef = ref(db, 'SensorData');
+      onValue(sensorRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        const soil1 = data.Soil1 || 0;
+        const soil2 = data.Soil2 || 0;
+        const soil3 = data.Soil3 || 0;
+        const soil4 = data.Soil4 || 0;
+
+        updateGauge(soilCharts.soil1, soil1);
+        updateGauge(soilCharts.soil2, soil2);
+        updateGauge(soilCharts.soil3, soil3);
+        updateGauge(soilCharts.soil4, soil4);
+
+        // Hitung & simpan rata-rata
+        const avg = Math.round((soil1 + soil2 + soil3 + soil4) / 4);
+        updateGauge(soilCharts.average, avg);
+        set(ref(db, 'SensorData/RataRata'), avg);
+      });
+    }
+  </script>
+</body>
+</html>
