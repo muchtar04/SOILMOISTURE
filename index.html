@@ -7,78 +7,81 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #a8e6cf, #dcedc1);
-      text-align: center;
-      padding: 20px;
-      margin: 0;
-    }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #d7d7d7, #bdbdbd); /* abu-abu */
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+  }
 
-    h2 {
-      color: #2c3e50;
-    }
+  h2 {
+    color: #333; /* abu gelap */
+  }
 
-    input {
-      padding: 10px;
-      margin: 8px;
-      width: 220px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
+  input {
+    padding: 10px;
+    margin: 8px;
+    width: 220px;
+    border-radius: 8px;
+    border: 1px solid #aaa;
+    font-size: 16px;
+    background: #f2f2f2;  /* abu muda */
+    color: #333;
+  }
 
-    button {
-      padding: 10px 25px;
-      border: none;
-      border-radius: 8px;
-      font-size: 17px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
+  button {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 17px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
 
-    #loginBtn { background: #3498db; color: white; }
-    #loginBtn:hover { background: #2980b9; }
+  #loginBtn { background: #6c6c6c; color: white; }
+  #loginBtn:hover { background: #555; }
 
-    #logoutBtn { background: #95a5a6; color: white; margin-top: 25px; }
-    #logoutBtn:hover { background: #7f8c8d; }
+  #logoutBtn { background: #8b8b8b; color: white; margin-top: 25px; }
+  #logoutBtn:hover { background: #6f6f6f; }
 
-    .gauge-container {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 30px;
-      margin-top: 30px;
-    }
+  .gauge-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-top: 30px;
+  }
 
-    .gauge-card {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      padding: 20px;
-      width: 200px;
-      transition: transform 0.2s;
-    }
+  .gauge-card {
+    background: #f8f8f8; /* card abu terang */
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    width: 200px;
+    transition: transform 0.2s;
+  }
 
-    .gauge-card:hover {
-      transform: translateY(-4px);
-    }
+  .gauge-card:hover {
+    transform: translateY(-4px);
+  }
 
-    .average-card {
-      width: 240px;
-      margin-top: 30px;
-    }
+  .average-card {
+    width: 240px;
+    margin-top: 30px;
+  }
 
-    #dashboard {
-      display: none;
-    }
+  #dashboard {
+    display: none;
+  }
 
-    .footer {
-      margin-top: 30px;
-      font-size: 14px;
-      color: #555;
-    }
-  </style>
+  .footer {
+    margin-top: 30px;
+    font-size: 14px;
+    color: #333;
+  }
+</style>
+
 </head>
 
 <body>
@@ -255,4 +258,5 @@
   </script>
 </body>
 </html>
+
 
